@@ -1,0 +1,8 @@
+/storage
+*.tgz
+*.old
+*.bak
+production*.yaml
+client*secret.json
+/docker-compose.yml
+/vendor

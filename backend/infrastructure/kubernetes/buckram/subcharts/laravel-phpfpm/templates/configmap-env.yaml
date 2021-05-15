@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-env
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+data:
+  BUCKRAM_VERSION: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  APP_ENV: {{ .Values.laravel.app.env | quote }}
+  APP_URL: {{ .Values.laravel.app.appUrl | quote }}
+  APP_LOG: {{ .Values.laravel.app.logChannel | quote }} 
+  CACHE_DRIVER: {{ .Values.laravel.app.cacheDriver | quote }}
+  DB_USERNAME: {{ .Values.postgresql.postgresUser }}
+  DB_CONNECTION: "pgsql"
+  DB_DATABASE: {{ .Values.postgresql.postgresDatabase }}
+  DB_HOST: "{{ .Release.Name }}-postgresql"
+  KEY_PATH: "/var/www/app/secrets"
+  LOG_CHANNEL: {{ .Values.laravel.app.logChannel | quote }} 
+  MAIL_DRIVER: {{ .Values.laravel.mail.driver | quote }}
+  MAIL_HOST: {{ .Values.laravel.mail.host | quote }}
+  MAIL_PORT: {{ .Values.laravel.mail.port | quote }}
+  MAIL_USERNAME: {{ .Values.laravel.mail.username | quote }}
+  MAIL_FROM_ADDRESS: {{ .Values.laravel.mail.fromAddress | quote }}
+  MAIL_FROM_NAME: {{ .Values.laravel.mail.fromName | quote }}
+  REDIS_HOST: "{{ .Release.Name }}-redis-master"
+  PROMETHEUS_ADAPTER: "redis"
+  QUEUE_DRIVER: {{ .Values.laravel.app.queueDriver | quote }}
+  APP_ENV: {{ .Values.laravel.app.env | quote }}
+  APP_DEBUG: {{ .Values.laravel.app.debug | quote }}
+
+  QUEUE_CONNECTION: {{ .Values.laravel.app.queueConnection | quote }}
+
+  SESSION_DRIVER: {{ .Values.laravel.session.driver | quote }}
+  SESSION_DOMAIN: {{ .Values.laravel.session.domain | quote }}
+  SESSION_LIFETIME: {{ .Values.laravel.session.lifeTime | quote }}
+
+  DB_PORT: "5432"
+
+  MAIL_ENCRYPTION: {{ .Values.laravel.mail.encryption | quote }}
+
+  FILESYSTEM_DRIVER: {{ .Values.laravel.fileSystemDriver | quote }}
+
+{{- if .Values.laravel.mail.sesKey }}
+  SES_KEY: {{ .Values.laravel.mail.sesKey | quote }}
+  SES_REGION: {{ .Values.laravel.mail.sesRegion | quote }}
+{{- end }}
+
+{{- if .Values.laravel.sharepoint }}
+  SHAREPOINT_KEY: {{ .Values.laravel.sharepoint.key | quote }}
+  SHAREPOINT_SECRET: {{ .Values.laravel.sharepoint.secret | quote }}
+  SHAREPOINT_SITE_URL: {{ .Values.laravel.sharepoint.siteUrl | quote }}
+  SHAREPOINT_SSL_VERIFY: {{ .Values.laravel.sharepoint.sslVerify | quote }}
+  SHAREPOINT_SITE_NAME: {{ .Values.laravel.sharepoint.siteName | quote }}
+  SHAREPOINT_REDIRECT_URI: {{ .Values.laravel.sharepoint.redirectUri | quote }}
+  SHAREPOINT_PUBLIC_URL: {{ .Values.laravel.sharepoint.publicUrl | quote }}
+  SHAREPOINT_ACCESS_TOKEN: {{ .Values.laravel.sharepoint.accessToken | quote }}
+{{- end }}
+
+{{- if .Values.laravel.storage.azure.enabled }}
+  AZURE_STORAGE_CONTAINER: {{ .Values.laravel.storage.azure.container | quote }}
+  AZURE_STORAGE_NAME: {{ .Values.laravel.storage.azure.name | quote }}
+{{- end }}
+
+{{- if .Values.laravel.storage.minio.enabled }}
+  MINIO_KEY: {{ .Values.laravel.storage.minio.key }}
+  MINIO_BUCKET: {{ .Values.laravel.storage.minio.bucket }}
+  MINIO_ENDPOINT: {{ .Values.laravel.storage.minio.endpoint }}
+{{- end }}
+
+{{- if .Values.laravel.pusherApp }}
+  PUSHER_APP_ID: {{ .Values.laravel.pusherApp.id | quote }}
+  PUSHER_APP_KEY: {{ .Values.laravel.pusherApp.key | quote }}
+  PUSHER_APP_SECRET: {{ .Values.laravel.pusherApp.secret | quote }}
+  PUSHER_APP_CLUSTER: {{ .Values.laravel.pusherApp.cluster | quote }}
+{{- end }}
+
+{{- if .Values.laravel.mixPusherApp }}
+  MIX_PUSHER_APP_KEY: {{ .Values.laravel.mixPusherApp.key | quote }}
+  MIX_PUSHER_APP_CLUSTER: {{ .Values.laravel.mixPusherApp.cluster | quote }}
+{{- end }}
+
+{{ toYaml .Values.env | indent 2 }}

@@ -1,0 +1,12 @@
+# This is for deploying the ingress controller
+dashboard:
+  enabled: false
+acme:
+  enabled: true
+  email: EMAILADDR
+  staging: false
+  persistence:
+    enabled: false
+ssl:
+  enabled: true
+  enforced: true

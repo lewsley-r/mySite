@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    tier: "middle"
+    nature: "service"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
+      tier: "middle"
+      nature: "service"
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+        tier: "middle"
+        nature: "service"
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/configmap-env: {{ include (print $.Template.BasePath "/configmap-env.yaml") . | sha256sum }}
+      {{- range $key, $value := .Values.annotations.service }}
+        {{ $key }}: {{ $value | quote }}
+      {{- end }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.internalPort }}
+        envFrom:
+        - configMapRef:
+            name: {{ template "fullname" . }}-env
+        env:
+        - name: APP_KEY
+          valueFrom:
+            secretKeyRef:
+              key: app-key
+              name: {{ template "fullname" . }}-env
+{{- if .Values.laravel.mail.sesKey }}
+        - name: SES_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: ses-secret
+              name: {{ template "fullname" . }}-env
+{{- end }}
+        - name: MAIL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: mail-password
+              name: {{ template "fullname" . }}-env
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: "{{ .Release.Name }}-postgresql"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: redis-password
+              name: "{{ .Release.Name }}-redis"
+{{- if .Values.laravel.storage.minio.enabled }}
+        - name: MINIO_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: minio-secret
+              name: {{ template "fullname" . }}-env
+{{- end }}
+{{- if .Values.laravel.storage.azure.enabled }}
+        - name: AZURE_STORAGE_KEY
+          valueFrom:
+            secretKeyRef:
+              key: azure-storage-key 
+              name: {{ template "fullname" . }}-env
+{{- end }}
+{{- range $env, $value := .Values.secretEnv }}
+        - name: {{ $env }}
+          valueFrom:
+            secretKeyRef:
+              key: {{ $env }}
+              name: {{ template "fullname" $ }}-env
+{{- end }}
+        volumeMounts:
+        - mountPath: /var/www/app/secrets
+          name: keys
+        - name: laravel-php-ini
+          mountPath: /usr/local/etc/php/php.ini
+          subPath: php.ini
+        - name: laravel-phpfpm-config
+          mountPath: /usr/local/etc/php-fpm.d/www.conf
+          subPath: www.conf
+        - name: laravel-additional-settings
+          mountPath: /var/www/app/config/additional.php
+          subPath: additional.php
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+{{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.image.pullSecrets | indent 8 }}
+{{- end }}
+      volumes:
+      - name: keys
+        secret:
+          secretName: {{ .Values.laravel.app.oauthSecret | default (include "fullname" .) }}
+          items:
+          - key: oauth-public.key
+            path: oauth-public.key
+          - key: oauth-private.key
+            path: oauth-private.key
+      - name: laravel-phpfpm-config
+        configMap:
+          name: {{ template "fullname" . }}
+      - name: laravel-php-ini
+        configMap:
+          name: {{ template "fullname" . }}-phpini
+      - name: laravel-additional-settings
+        configMap:
+          name: {{ template "fullname" . }}-additional-settings

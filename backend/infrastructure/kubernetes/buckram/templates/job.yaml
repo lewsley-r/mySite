@@ -1,0 +1,97 @@
+{{- if .Values.runningJob -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{.Values.jobName}}"
+  labels:
+    heritage: {{.Release.Service | quote }}
+    release: {{.Release.Name | quote }}
+    chart: "{{.Chart.Name}}-{{.Chart.Version}}"
+    job: "ckan-artisan-job"
+spec:
+  template:
+    metadata:
+      name: "{{.Values.jobName}}"
+      labels:
+        job: "ckan-artisan-job"
+        heritage: {{.Release.Service | quote }}
+        release: {{.Release.Name | quote }}
+        chart: "{{.Chart.Name}}-{{.Chart.Version}}"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: artisan-job
+        image: "{{ index .Values "laravel-phpfpm" "image" }}:{{ index .Values "laravel-phpfpm" "imageTag" }}"
+        command:
+        - "php"
+        - "artisan"
+        {{- range split " " .Values.artisanCommand }}
+        - {{ . -}}
+        {{ end }}
+        envFrom:
+        - configMapRef:
+            name: {{ template "fullname" . }}-env
+        env:
+{{- if .Values.laravel.storage.azure.enabled }}
+        - name: AZURE_STORAGE_KEY
+          valueFrom:
+            secretKeyRef:
+              key: azure-storage-key
+              name: {{ template "fullname" . }}-env
+{{- end }}
+        - name: APP_KEY
+          valueFrom:
+            secretKeyRef:
+              key: app-key
+              name: {{ template "fullname" . }}-env
+{{- if .Values.laravel.mail.sesKey }}
+        - name: SES_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: ses-secret
+              name: {{ template "fullname" . }}-env
+{{- end }}
+        - name: MAIL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: mail-password
+              name: {{ template "fullname" . }}-env
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: "{{ .Release.Name }}-postgresql"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: redis-password
+              name: "{{ .Release.Name }}-redis"
+{{- range $env, $value := .Values.secretEnv }}
+        - name: {{ $env }}
+          valueFrom:
+            secretKeyRef:
+              key: {{ $env }}
+              name: {{ template "fullname" $ }}-env
+{{- end }}
+        volumeMounts:
+        - mountPath: /var/www/app/secrets
+          name: keys
+          items:
+          - key: oauth-public.key
+            path: oauth-public.key
+          - key: oauth-private.key
+            path: oauth-private.key
+        - name: laravel-phpfpm-config
+          mountPath: /usr/local/etc/php-fpm.d/www.conf
+          subPath: www.conf
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+      - name: keys
+        secret:
+          secretName: {{ .Values.laravel.app.oauthSecret | default (include "fullname" .) }}
+      - name: laravel-phpfpm-config
+        configMap:
+          name: {{ template "fullname" . }}
+      restartPolicy: Never
+{{- end -}}

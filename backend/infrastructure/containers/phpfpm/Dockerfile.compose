@@ -1,0 +1,9 @@
+#this is the Docker file just for compose since this is a difference build context to when the gitlab ci is running.
+
+FROM flaxandteal/docker-laravel-phpfpm:7.3.3-alpine
+
+COPY ./infrastructure/containers/phpfpm/php.ini /usr/local/etc/php
+
+COPY . /var/www/app
+
+RUN mkdir -p /var/www/app/storage; (chown -R :www-data /var/www/app/storage && chmod -R g+rwX /var/www/app/storage)

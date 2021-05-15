@@ -1,0 +1,11 @@
+FROM flaxandteal/docker-laravel-phpfpm:7.4.3-alpine
+
+RUN apk update && apk add build-base autoconf
+RUN pecl install xdebug-3.0.1 \
+    && docker-php-ext-enable xdebug
+
+ENV XDEBUG_CONFIG "remote_host=172.18.0.1 remote_port=9001 idekey=xdebug"
+RUN sed -i '1 a xdebug.profiler_enable_trigger=1' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+RUN sed -i '1 a xdebug.profiler_output_dir=/tmp/xdebug/out' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+RUN sed -i '1 a xdebug.remote_enable=1' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+RUN sed -i '1 a xdebug.remote_handler=dbgp' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini

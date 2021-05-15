@@ -1,0 +1,20 @@
+appVersion: 0.12
+description: Fast and Lightweight Log/Data Forwarder for Linux, BSD and OSX
+home: http://fluentd.org
+icon: https://raw.githubusercontent.com/fluent/fluentd-docs/master/public/logo/Fluentd_square.png
+keywords:
+- logging
+- monitoring
+- fluent
+- fluentd
+maintainers: ~
+# UPSTREAM
+# - email: Kevin.Fox@pnnl.gov
+#   name: kfox1111
+# - email: eduardo@treasure-data.com
+#   name: edsiper
+name: fluentd
+sources:
+- http://fluentbit.io
+- http://fluentd.org
+version: 0.0.1

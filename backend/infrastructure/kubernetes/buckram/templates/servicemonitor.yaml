@@ -1,0 +1,24 @@
+{{- if .Values.monitoring.active -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: "{{ .Release.Name }}-buckram"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+{{ toYaml .Values.monitoring.labels | indent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}-laravel-nginx"
+      service: "{{ .Release.Name }}-laravel-nginx"
+  endpoints:
+  - port: nginx
+    interval: 15s
+    path: "/triadev/pe/metrics"
+  namespaceSelector:
+    any: true
+  jobLabel: {{ template "fullname" . }}
+{{- end -}}

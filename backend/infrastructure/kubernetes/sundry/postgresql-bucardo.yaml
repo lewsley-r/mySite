@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dev-postgresql-bucardo
+  labels:
+    app: dev-postgresql
+spec:
+  containers:
+  - name: dev-postgresql-bucardo
+    image: "plgr/bucardo"
+    imagePullPolicy: IfNotPresent
+    env:
+    - name: BUCARDO_DB1
+      valueFrom:
+        secretKeyRef:
+          key: postgres-password
+          name: dev-postgresql
+    - name: BUCARDO_DB2
+      value: "laraveltest"
+    volumeMounts:
+    - mountPath: /media/bucardo/bucardo.json
+      name: dev-postgresql-bucardo-json
+      subPath: bucardo.json
+  volumes:
+  - name: dev-postgresql-bucardo-json
+    configMap:
+      name: dev-postgresql-bucardo-json
+      items:
+      - key: postgresqlBucardoJson
+        path: bucardo.json

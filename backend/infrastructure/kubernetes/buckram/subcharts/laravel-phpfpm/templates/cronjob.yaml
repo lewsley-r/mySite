@@ -1,0 +1,114 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    tier: "backend"
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    nature: "cronjob"
+spec:
+  schedule: "* * * * *"
+  startingDeadlineSeconds: 60
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app: {{ template "fullname" . }}
+            tier: "backend"
+            nature: "cronjob"
+          annotations:
+            checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+            checksum/configmap-env: {{ include (print $.Template.BasePath "/configmap-env.yaml") . | sha256sum }}
+      {{- range $key, $value := .Values.annotations.cronjob }}
+            {{ $key }}: {{ $value | quote }}
+      {{- end }}
+        spec:
+          activeDeadlineSeconds: 60
+          containers:
+          - name: {{ .Chart.Name }}-scheduler
+            command: ["php", "artisan", "schedule:run"]
+            image: "{{ .Values.workerImage.repository }}:{{ .Values.workerImage.tag }}"
+            imagePullPolicy: {{ .Values.workerImage.pullPolicy }}
+            envFrom:
+            - configMapRef:
+                name: {{ template "fullname" . }}-env
+            env:
+{{- if .Values.laravel.storage.azure.enabled }}
+            - name: AZURE_STORAGE_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: azure-storage-key
+                  name: {{ template "fullname" . }}-env
+{{- end }}
+            - name: APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: app-key
+                  name: {{ template "fullname" . }}-env
+{{- if .Values.laravel.mail.sesKey }}
+            - name: SES_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: ses-secret
+                  name: {{ template "fullname" . }}-env
+{{- end }}
+            - name: MAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mail-password
+                  name: {{ template "fullname" . }}-env
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-password
+                  name: "{{ .Release.Name }}-postgresql"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: redis-password
+                  name: "{{ .Release.Name }}-redis"
+{{- range $env, $value := .Values.secretEnv }}
+            - name: {{ $env }}
+              valueFrom:
+                secretKeyRef:
+                  key: {{ $env }}
+                  name: {{ template "fullname" $ }}-env
+{{- end }}
+            volumeMounts:
+            - mountPath: /var/www/app/secrets
+              name: keys
+            - name: laravel-phpfpm-config
+              mountPath: /usr/local/etc/php-fpm.d/www.conf
+              subPath: www.conf
+            - name: laravel-additional-settings
+              mountPath: /var/www/app/config/additional.php
+              subPath: additional.php
+            resources:
+{{ toYaml .Values.resources | indent 16 }}
+{{- if .Values.workerImage.pullSecrets }}
+          imagePullSecrets:
+{{ toYaml .Values.workerImage.pullSecrets | indent 12 }}
+{{- end }}
+          volumes:
+          - name: keys
+            secret:
+              secretName: {{ .Values.laravel.app.oauthSecret | default (include "fullname" .) }}
+              items:
+              - key: oauth-public.key
+                path: oauth-public.key
+              - key: oauth-private.key
+                path: oauth-private.key
+          - name: laravel-phpfpm-config
+            configMap:
+              name: {{ template "fullname" . }}
+          - name: laravel-additional-settings
+            configMap:
+              name: {{ template "fullname" . }}-additional-settings
+          restartPolicy: Never

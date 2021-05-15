@@ -1,0 +1,60 @@
+# This is a template for the Kubernetes production secrets.
+# It is strongly recommended that you create and complete the
+# production.yaml file outside of the file tree
+laravel-nginx:
+  image:
+    repository: flaxandteal/buckram-nginx
+    tag: stable
+  ingress:
+    hostname: DNS.DOMAIN
+    annotations:
+      certmanager.k8s.io/cluster-issuer: letsencrypt-staging
+      kubernetes.io/ingress.class: nginx
+  laravel:
+    serverName: DNS.DOMAIN
+laravel-phpfpm:
+  image:
+    repository: flaxandteal/buckram-phpfpm
+    tag: stable
+  workerImage:
+    repository: flaxandteal/buckram-phpfpm
+    tag: stable
+  laravel:
+    app:
+      appKey: base64:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      appUrl: "https://DNS.DOMAIN"
+      oauthPublicKey: OAUTH_PUBLIC_KEY_B64
+      oauthPrivateKey: OAUTH_PRIVATE_KEY_B64
+    mail:
+      username: "mailuser"
+      password: "mailpass"
+      host: "smtp.host"
+      port: "25"
+      fromAddress: "from@example.com"
+      fromName: "From Name"
+postgresql:
+  postgresqlConfiguration: {"logStatement": "all", "logLinePrefix": "'%m [%u] '"}
+  postgresqlDatabase: laravel
+  postgresqlUsername: laravel
+  postgresqlPassword: xxxxxxxxx
+redis:
+  password: xxxxxxxxxx
+elastic-stack:
+  elasticsearch:
+    master: 
+      replicas: 2
+    client: 
+      replicas: 1
+    data: 
+      replicas: 1
+  logstash:
+    enabled: false
+  kibana:
+    enabled: true
+  fluentd-elasticsearch:
+    enabled: true 
+    elasticsearch:
+      host: <ELASTIC SEARCH CLIENT SERVICE> 
+      logstashPrefix: fluentd
+tags:
+  elk: false 

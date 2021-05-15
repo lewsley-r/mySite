@@ -1,0 +1,10 @@
+DB_CONNECTION={{ db['connection'] }}
+DB_HOST={{ db['host'] }}
+DB_PORT={{ db['port'] }}
+DB_PASSWORD={{ db['password'] }}
+DB_USERNAME={{ db['user'] }}
+DB_DATABASE={{ db['database'] }}
+POSTGRES_PASSWORD={{ db['password'] }}
+POSTGRES_USER={{ db['user'] }}
+POSTGRES_DB={{ db['database'] }}
+LARAVEL_SERVER_NAME={{ laravel['server_name'] }}
