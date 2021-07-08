@@ -4,8 +4,6 @@ services:
     image: postgres:12
     volumes:
       - ./docker/storage/db:/data
-    environment:
-      PGDATA: /data
     env_file:
       - .env
   frontend:
