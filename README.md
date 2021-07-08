@@ -7,7 +7,7 @@ Stack consists of:
 Vue.js Front-end,
 Laravel PHP Back-end,
 Nginx Web Server,
-MySQL DB
+Postgres DB
 ```
 All of this is of course containerised with docker.
 
